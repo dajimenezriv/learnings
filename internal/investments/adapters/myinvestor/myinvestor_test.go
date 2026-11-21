@@ -29,7 +29,7 @@ func TestRefreshBestSellers(t *testing.T) {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /BEST_SELLERS", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /BEST_SELLERS", func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprintf(w, "%s", string(data))
 	})
 

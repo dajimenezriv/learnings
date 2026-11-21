@@ -1,4 +1,3 @@
-// Package logger provides the functionality to setup a logger with OTel.
 package logger
 
 import (

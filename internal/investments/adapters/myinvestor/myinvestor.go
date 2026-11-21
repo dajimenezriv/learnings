@@ -50,7 +50,7 @@ func (my *MyInvestor) GetBestSellers(ctx context.Context) ([]BestSeller, error) 
 }
 
 func (my *MyInvestor) RefreshBestSellers(ctx context.Context) ([]BestSeller, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", my.url+"/BEST_SELLERS", nil)
