@@ -10,6 +10,9 @@ vars:
   ENV_DIRS: . infra/auth0 infra/github
 
 tasks:
+  server: go run ./cmd/server
+  cli: go run ./cmd/cli {{.CLI_ARGS}}
+
   test:coverage:
     cmds:
       - go test ./... -race -coverpkg=./... -coverprofile=raw_coverage.out
