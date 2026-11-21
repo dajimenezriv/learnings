@@ -1,0 +1,8 @@
+version: "3"
+
+dotenv: [".env"]
+
+tasks:
+  tf:
+    desc: Run terraform (task tf -- plan)
+    cmd: terraform {{.CLI_ARGS}}

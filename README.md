@@ -1,10 +1,34 @@
 # Exercise2 - Go DDD Base
 
+## Setup
+
+```bash
+# Install mise
+curl -fsSL https://mise.run | sh
+echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
+source ~/.bashrc
+mise doctor
+
+# Pin dependencies
+mise use --pin aqua:go-task/task@3
+mise use --pin aqua:golangci/golangci-lint@2.14.0
+mise use --pin aqua:sqlc-dev/sqlc@1.31.1
+mise use --pin node@24
+mise use --pin npm:squawk-cli@2.59.0
+mise lock
+```
+
+- Terraform github and neon
+- Set deleted_by in deletion_audit
+- Add grafana cloud and slog
+- Neon backups and branches
 - Aggregates
 - Option types
 - Circuit breaker
 - Auth middleware
 - Prometheus + exemplars
+- mcp SERVER
+- Redis
 
 ---
 
