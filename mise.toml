@@ -1,7 +1,7 @@
 [tools]
 "aqua:getsops/sops" = "3.13.3"
 "aqua:go-task/task" = "3.54.0"
-"aqua:golangci/golangci-lint" = "2.14.0"
+"aqua:golangci/golangci-lint" = "2.15.0"
 "aqua:sqlc-dev/sqlc" = "1.31.1"
 node = "24.22.3"
 "npm:squawk-cli" = "2.59.0"
