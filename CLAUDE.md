@@ -3,17 +3,14 @@
 - I'm creating a toy project for learning, but the idea with it is to apply practices that big teams and projects apply since I want to learn them for job.
 - Golang version 1.27.
 - The project uses Hexagonal Architecture and DDD.
-- README outdated. Trust this file + code.
 - HTTP: Huma v2 + chi. SQL: sqlc + pgx/v5.
-- Aggregates: `Actor`, `Account`. Postgres.
-- Bounded context: `internal/participants`.
-- Remember to encode the env variables
+- Aggregates: `Actor`, `Account`. Postgres
+- Bounded contexts: `internal/participants`, `internal/investments`.
+- Remember to encode the env variables.
 
 ## Commands
 
 ```bash
-docker compose up -d                 # Postgres on localhost:5555 (user/pass/db: ddd)
-cp .env.example .env                 # backend env, loaded by the app and Taskfile
 go run ./cmd/server                  # API on :8080, OpenAPI docs at /docs
 go run ./cmd/cli login               # CLI: device-flow login, tokens → ./data/token.json
 
@@ -29,9 +26,29 @@ golangci-lint fmt ./...              # gofumpt + goimports
 ## Layout
 
 ```
-infra/auth0/           Terraform: Auth0 API
-cmd/server/            main.go (config, server, route registration), setup.go (manual DI wiring), migrate.go (`server migrate`: up only, run by the deploy pipeline)
-cmd/cli/               main.go (root cmd, config, registerCommands), setup.go (manual DI wiring). Config loaded before wiring; error reported on command run (--help works without env)
+📄 .env (Environment variables ignored)
+📄 .env.enc (Environment variables encrypted)
+📄 golangci.yaml (As strict as possible)
+📄 sops.yaml (Encrypt/decrypt .env and .env.nec)
+📄 squawk.toml (Lint postgres migrations)
+📄 docker-compose.yaml (Postgres 18 container)
+📄 mise.toml (Store all necessary tools)
+📄 oapi-codegen.yaml (Generate OpenAPI documentation from Huma v2)
+📄 renovate.json (Keep dependencies up to date)
+📄 sqlc.yaml (Generates type-safe code from SQL)
+📄 Taskfile.yaml (Contains all commands)
+📁 infra
+  📁 auth0 (Terraform: Auth0 API)
+  📁 github (Terraform: Github API)
+📁 cmd
+  📁 cli (Runs CLI client)
+  📁 server (Runs server, migrations or openapi)
+📁 internal
+  📁 cli (Hexagonal + DDD)
+  📁 investments (Hexagonal + DDD)
+  📁 participants (Hexagonal + DDD)
+  📁 platform (Shared code)
+  📁 testhelpers (Shared test code)
 internal/cli/          CLI core: config only. No cobra imports
   domain/<agg>/        plain structs (server owns the rules) + Repository interface (port)
   domain/auth/         ports Authenticator (device login) + TokenStore, auth sentinels (ErrNotLoggedIn...)
@@ -56,7 +73,19 @@ internal/participants/
   adapters/http/<name>/ one Huma endpoint per package: Input/Output, Register, Handle
 ```
 
-Deps inward: `adapters → app → domain`. Domain imports nothing from app/adapters.
+## Hexagonal + DDD
+
+```
+📁 adapters
+📁 app (Never contains tests, it is tested through adapter tests)
+  📁 command
+    📁 <command>
+      📄 <command>_command.go
+  📁 query
+    📁 <query>
+      📄 <query>_query.go
+📁 domain (Never imports from app/adapters)
+```
 
 ## Conventions
 
@@ -83,7 +112,7 @@ Deps inward: `adapters → app → domain`. Domain imports nothing from app/adap
 
 ## Testing
 
-- testify: `require` for preconditions/errors, `assert` for values.
+- Use `github.com/stretchr/testify`: `require` for preconditions/errors, `assert` for values.
 - Tests only in `domain/` and `adapters/`. Never in `app/`.
 - Commands/queries: tested via adapters (HTTP tests + fake repos).
 - Repo behaviour: `RunRepositoryContract` (`domain/<agg>/<agg>test`), runs on fake + Postgres. Repo change → add contract cases, sync fake.
@@ -94,12 +123,16 @@ Deps inward: `adapters → app → domain`. Domain imports nothing from app/adap
 
 ## Definition of done
 
+1. `task fmt`
+2. `task lint`
+3. `go test -race ./...`
+4. `task sqlc` no diff
+5. `task squawk`
+6. `task schema:dump` no diff.
+7. `go mod tidy` no diff.
+
 All must pass:
 
-1. `golangci-lint fmt ./... && golangci-lint run ./...`. Fix code. No `//nolint` (if unavoidable: specific + explained).
-2. `go test -race ./...`
-3. SQL/migrations changed: `task sqlc` no diff, `task squawk` passes, `task schema:dump` no diff.
-   HTTP API changed: `task openapi` (spec + CLI client in sync).
-4. `go mod tidy` no diff.
+HTTP API changed: `task openapi` (spec + CLI client in sync).
 
 Then: summarise changes + judgment calls.
