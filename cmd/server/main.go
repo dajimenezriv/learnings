@@ -19,6 +19,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -135,6 +136,27 @@ func run() error {
 
 func registerHTTPHandlers(app *application) chi.Router {
 	r := chi.NewRouter()
+	r.Use(
+		middleware.Heartbeat("/healthz"),
+		middleware.RequestID,
+		// Assumes the server is only reachable through the edge proxy, which
+		// overwrites X-Real-IP with the address of the connection it accepted.
+		middleware.ClientIPFromHeader("X-Real-IP"),
+		httpapi.TraceMiddleware,
+		httpapi.LoggerMiddleware,
+		httpapi.RecovererMiddleware,
+		// Load shedding, not rate limiting: caps in-flight requests across all
+		// clients and rejects the rest straight away. 503 instead of the default
+		// 429, since the server is overloaded, not the client misbehaving.
+		middleware.ThrottleWithOpts(middleware.ThrottleOpts{
+			Limit:        1000,
+			StatusCode:   http.StatusServiceUnavailable,
+			RetryAfterFn: func(bool) time.Duration { return time.Second },
+		}),
+		middleware.RequestSize(1<<20),
+		httpapi.TimeoutMiddleware(10*time.Second),
+	)
+
 	registerOperations(humachi.New(r, httpapi.Config()), app)
 	return r
 }

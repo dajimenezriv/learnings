@@ -1,4 +1,4 @@
-package chiapi
+package httpapi
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/assert"
 )
 
 type fakeLimiter struct {
@@ -50,12 +51,8 @@ func TestLimit(t *testing.T) {
 			rec := httptest.NewRecorder()
 			mux.ServeHTTP(rec, req)
 
-			if got, want := rec.Code, tt.wantCode; got != want {
-				t.Errorf("Limit.Code = %d, want %d", got, tt.wantCode)
-			}
-			if got := rec.Header().Get("Retry-After"); got != tt.wantRetryAfter {
-				t.Errorf("Limit.Retry-After = %s, want %s", got, tt.wantRetryAfter)
-			}
+			assert.Equal(t, tt.wantCode, rec.Code)
+			assert.Equal(t, tt.wantRetryAfter, rec.Header().Get("Retry-After"))
 		})
 	}
 }
@@ -67,9 +64,7 @@ func TestRecoverer_RecoversPanic(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
-	recovererMiddleware(http.HandlerFunc(handler)).ServeHTTP(rec, req)
+	RecovererMiddleware(http.HandlerFunc(handler)).ServeHTTP(rec, req)
 
-	if got, want := rec.Code, http.StatusInternalServerError; got != want {
-		t.Errorf("Recoverer.Code = %d, want %d", got, want)
-	}
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 }

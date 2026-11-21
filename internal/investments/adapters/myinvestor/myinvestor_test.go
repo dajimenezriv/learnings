@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-openapi/testify/v2/require"
 	"go.uber.org/goleak"
 )
 
@@ -22,6 +23,7 @@ func TestGetBestSellers(t *testing.T) {
 
 func TestRefreshBestSellers(t *testing.T) {
 	data, err := os.ReadFile("best-sellers.json")
+	require.NoError(t, err)
 	if err != nil {
 		t.Fatalf("ReadFile() = %v, want nil", err)
 	}

@@ -15,6 +15,7 @@ tasks:
       - go test ./... -race -coverpkg=./... -coverprofile=raw_coverage.out
       - grep -vE '/(actortest|accounttest)/' raw_coverage.out > coverage.out
 
+  fmt: golangci-lint fmt
   lint: golangci-lint run
 
   openapi:

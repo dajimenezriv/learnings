@@ -1,4 +1,4 @@
-package chiapi
+package httpapi
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestToHTTPError(t *testing.T) {
@@ -27,15 +27,9 @@ func TestToHTTPError(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			err := toHTTPError(t.Context(), tt.err)
 			se, ok := errors.AsType[huma.StatusError](err)
-			if !ok {
-				t.Fatalf("toHTTPError() is not a huma.StatusError")
-			}
-			if got, want := se.GetStatus(), tt.wantCode; got != want {
-				t.Errorf("toHTTPError().GetStatus() = %d, want %d", got, want)
-			}
-			if strings.Contains(se.Error(), "store") {
-				t.Errorf("toHTTPError() = %q, leaks the internal error", se.Error())
-			}
+			assert.True(t, ok)
+			assert.Equal(t, tt.wantCode, se.GetStatus())
+			assert.NotContains(t, se.Error(), "store")
 		})
 	}
 }
@@ -64,9 +58,7 @@ func TestClientKey(t *testing.T) {
 				got = clientKey(r)
 			}))
 			h.ServeHTTP(httptest.NewRecorder(), r)
-			if got != tt.want {
-				t.Errorf("clientKey() = %q, want %q", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

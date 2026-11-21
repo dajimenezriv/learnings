@@ -1,4 +1,4 @@
-package chiapi
+package httpapi
 
 import (
 	"context"

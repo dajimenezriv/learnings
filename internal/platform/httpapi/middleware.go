@@ -1,4 +1,4 @@
-package chiapi
+package httpapi
 
 import (
 	"context"
@@ -10,7 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dajimenezriv/personal/internal/logger"
+	"exercise/internal/platform/logger"
+
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
@@ -32,7 +33,7 @@ func NewMiddleware(l limiter) *Middleware {
 	return &Middleware{l: l}
 }
 
-func traceMiddleware(next http.Handler) http.Handler {
+func TraceMiddleware(next http.Handler) http.Handler {
 	tracer := otel.Tracer("exercises/chiapi")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Continue the caller's trace if it sent a traceparent header or start a new one.
@@ -50,7 +51,7 @@ func traceMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func loggerMiddleware(next http.Handler) http.Handler {
+func LoggerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -73,7 +74,7 @@ func loggerMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func recovererMiddleware(next http.Handler) http.Handler {
+func RecovererMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			rvr := recover()
@@ -101,7 +102,7 @@ func recovererMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func timeoutMiddleware(d time.Duration) func(http.Handler) http.Handler {
+func TimeoutMiddleware(d time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx, cancel := context.WithTimeout(r.Context(), d)

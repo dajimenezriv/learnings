@@ -22,6 +22,8 @@ linters:
     errcheck:
       check-type-assertions: true
       check-blank: true
+    sloglint:
+      context: scope
     gocritic:
       enable-all: true
       disabled-checks:
