@@ -2,12 +2,12 @@ package myinvestor
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -39,15 +39,12 @@ type BestSeller struct {
 	ReturnsDate    *string  `json:"returns-update-date"`
 }
 
-func (*MyInvestor) GetBestSellers(context.Context) (_ []BestSeller, err error) {
-	f, err := os.Open("best-sellers.json")
-	if err != nil {
-		return nil, fmt.Errorf("open: %w", err)
-	}
-	defer func() { err = errors.Join(err, f.Close()) }()
+//go:embed best-sellers.json
+var bestSellersJSON []byte
 
+func (*MyInvestor) GetBestSellers(context.Context) (_ []BestSeller, err error) {
 	var res []BestSeller
-	if err := json.NewDecoder(f).Decode(&res); err != nil {
+	if err := json.Unmarshal(bestSellersJSON, &res); err != nil {
 		return nil, fmt.Errorf("json decode: %w", err)
 	}
 	return res, nil

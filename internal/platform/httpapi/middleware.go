@@ -35,7 +35,7 @@ func NewMiddleware(l limiter) *Middleware {
 }
 
 func TraceMiddleware(next http.Handler) http.Handler {
-	tracer := otel.Tracer("exercises/chiapi")
+	tracer := otel.Tracer("learnings")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Continue the caller's trace if it sent a traceparent header or start a new one.
 		ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))

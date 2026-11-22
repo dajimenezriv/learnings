@@ -11,6 +11,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestToHTTPError(t *testing.T) {
@@ -27,7 +28,7 @@ func TestToHTTPError(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			err := toHTTPError(t.Context(), tt.err)
 			se, ok := errors.AsType[huma.StatusError](err)
-			assert.True(t, ok)
+			require.True(t, ok)
 			assert.Equal(t, tt.wantCode, se.GetStatus())
 			assert.NotContains(t, se.Error(), "store")
 		})
