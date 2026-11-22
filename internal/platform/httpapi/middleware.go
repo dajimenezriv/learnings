@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -76,27 +77,26 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 
 func RecovererMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
+		defer func(ctx context.Context) {
 			rvr := recover()
 			if rvr == nil {
 				return
 			}
 
-			//nolint:errorlint // panic values are not wrapped
-			if rvr == http.ErrAbortHandler {
+			if err, ok := rvr.(error); ok && errors.Is(err, http.ErrAbortHandler) {
 				// We don't recover http.ErrAbortHandler so the response to the client is
 				// aborted, this should not be logged.
 				panic(rvr)
 			}
 
-			slog.ErrorContext(r.Context(), "panic recovered",
+			slog.ErrorContext(ctx, "panic recovered",
 				"panic", fmt.Sprint(rvr),
 				"stack", string(debug.Stack()))
 
 			if r.Header.Get("Connection") != "Upgrade" {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
-		}()
+		}(r.Context())
 
 		next.ServeHTTP(w, r)
 	})
