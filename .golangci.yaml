@@ -51,7 +51,7 @@ linters:
           - funlen
           - gochecknoglobals
           - goconst
-          - mnd
+          - noctx
           - wrapcheck
 
 formatters:

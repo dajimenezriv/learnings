@@ -49,7 +49,7 @@ func TestClientKey(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/abc", http.NoBody)
+			r := httptest.NewRequest(http.MethodGet, "/abc", http.NoBody)
 			r.RemoteAddr = tt.remoteAddr
 			if tt.xRealIP != "" {
 				r.Header.Set("X-Real-IP", tt.xRealIP)

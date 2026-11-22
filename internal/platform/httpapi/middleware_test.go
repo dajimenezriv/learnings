@@ -47,7 +47,7 @@ func TestLimit(t *testing.T) {
 				return &struct{}{}, nil
 			})
 
-			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", http.NoBody)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 			rec := httptest.NewRecorder()
 			mux.ServeHTTP(rec, req)
 
@@ -62,7 +62,7 @@ func TestRecoverer_RecoversPanic(t *testing.T) {
 		panic("boom")
 	}
 
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", http.NoBody)
+	req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 	rec := httptest.NewRecorder()
 	RecovererMiddleware(http.HandlerFunc(handler)).ServeHTTP(rec, req)
 
