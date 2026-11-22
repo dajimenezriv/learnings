@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"exercise/internal/platform/httpapi"
+	"exercise/internal/platform/logger"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/danielgtaylor/huma/v2"
@@ -67,6 +68,8 @@ func loadConfig() (config, error) {
 }
 
 func run() error {
+	logger.Setup()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
