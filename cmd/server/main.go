@@ -24,19 +24,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const (
-	readHeaderTimeout = 5 * time.Second
-	readTimeout       = 10 * time.Second
-	writeTimeout      = 30 * time.Second
-	idleTimeout       = 120 * time.Second
-	shutdownTimeout   = 10 * time.Second
-)
-
-var (
-	errUnknownCommand = errors.New("unknown command")
-	errPoolerURL      = errors.New("DATABASE_URL must use the direct Neon endpoint, not -pooler")
-)
-
 type config struct {
 	DatabaseURL string `env:"DATABASE_URL,required,notEmpty"`
 }
@@ -58,7 +45,7 @@ func dispatch(args []string) error {
 	case "migrate":
 		return migrateUp()
 	default:
-		return fmt.Errorf("%w %q", errUnknownCommand, args[0])
+		return fmt.Errorf("unknown command %q", args[0])
 	}
 }
 
@@ -74,7 +61,7 @@ func loadConfig() (config, error) {
 	// lock, which breaks under PgBouncer transaction mode. Use the direct endpoint.
 	// https://neon.com/docs/connect/connection-pooling
 	if strings.Contains(cfg.DatabaseURL, "-pooler") {
-		return config{}, errPoolerURL
+		return config{}, errors.New("DATABASE_URL must use the direct Neon endpoint, not -pooler")
 	}
 	return cfg, nil
 }
@@ -104,10 +91,10 @@ func run() error {
 	srv := &http.Server{
 		Addr:              ":8080",
 		Handler:           registerHTTPHandlers(app),
-		ReadHeaderTimeout: readHeaderTimeout,
-		ReadTimeout:       readTimeout,
-		WriteTimeout:      writeTimeout,
-		IdleTimeout:       idleTimeout,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	serveErr := make(chan error, 1)
@@ -126,7 +113,7 @@ func run() error {
 		log.Println("🛑 Shutting down")
 	}
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("shutdown server: %w", err)

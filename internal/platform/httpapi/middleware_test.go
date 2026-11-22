@@ -44,10 +44,10 @@ func TestLimit(t *testing.T) {
 				DefaultStatus: http.StatusOK,
 				Middlewares:   huma.Middlewares{m.Limit("endpoint")},
 			}, func(context.Context, *struct{}) (*struct{}, error) {
-				return nil, nil
+				return &struct{}{}, nil
 			})
 
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", http.NoBody)
 			rec := httptest.NewRecorder()
 			mux.ServeHTTP(rec, req)
 
@@ -62,7 +62,7 @@ func TestRecoverer_RecoversPanic(t *testing.T) {
 		panic("boom")
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", http.NoBody)
 	rec := httptest.NewRecorder()
 	RecovererMiddleware(http.HandlerFunc(handler)).ServeHTTP(rec, req)
 
