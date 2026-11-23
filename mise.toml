@@ -4,4 +4,4 @@
 "aqua:golangci/golangci-lint" = "2.14.0"
 "aqua:sqlc-dev/sqlc" = "1.31.1"
 node = "24.22.3"
-"npm:squawk-cli" = "2.59.0"
+"npm:squawk-cli" = "2.74.0"
