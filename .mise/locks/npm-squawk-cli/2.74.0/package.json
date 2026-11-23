@@ -2,6 +2,6 @@
   "name": "mise-npm-install",
   "private": true,
   "dependencies": {
-    "squawk-cli": "2.59.0"
+    "squawk-cli": "2.74.0"
   }
 }

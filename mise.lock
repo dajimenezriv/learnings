@@ -210,10 +210,7 @@ checksum = "sha256:e612af99f626ab415ea225af6bce5c971feb448cb5cae250bb1c3fa50c5f7
 url = "https://nodejs.org/dist/v24.22.3/node-v24.22.3-win-x64.zip"
 
 [[tools."npm:squawk-cli"]]
-version = "2.59.0"
-aube = { path = ".mise/locks/npm-squawk-cli/2.59.0", digest = "sha256:dc5c98d6c8f1a0fcd05fe071207cd72d7773fbb17cb92a1291f1a1c518237918" }
+version = "2.74.0"
+aube = { path = ".mise/locks/npm-squawk-cli/2.74.0", digest = "sha256:eeed46b894888352e7e022eef3d76f4e044a97df48939ccf25377d10648b0afa" }
 backend = "npm:squawk-cli"
-specifiers = ["2.59.0"]
-
-[tools."npm:squawk-cli".provenance]
-repository = "github.com/sbdchd/squawk"
+specifiers = ["2.74.0"]
