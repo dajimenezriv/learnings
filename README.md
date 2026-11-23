@@ -18,11 +18,12 @@ mise use --pin npm:squawk-cli@2.59.0
 mise lock
 ```
 
+- Aggregates
+- Domain events
 - Terraform github and neon
 - Set deleted_by in deletion_audit
 - Add grafana cloud and slog
 - Neon backups and branches
-- Aggregates
 - Option types
 - Circuit breaker
 - Auth middleware
