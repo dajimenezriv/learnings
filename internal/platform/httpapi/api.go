@@ -1,4 +1,4 @@
-package chiapi
+package httpapi
 
 import (
 	"context"
@@ -45,6 +45,9 @@ func clientKey(r *http.Request) string {
 	if addr.Is4() {
 		return addr.String()
 	}
-	prefix, _ := addr.Prefix(64)
+	prefix, err := addr.Prefix(64)
+	if err != nil {
+		return addr.String()
+	}
 	return prefix.String()
 }

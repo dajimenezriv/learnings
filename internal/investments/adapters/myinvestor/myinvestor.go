@@ -2,11 +2,12 @@ package myinvestor
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -22,6 +23,7 @@ func NewMyInvestor() *MyInvestor {
 	}
 }
 
+//nolint:tagliatelle,misspell // JSON keys are dictated by the MyInvestor API.
 type BestSeller struct {
 	ISIN           string   `json:"isin"`
 	Name           string   `json:"name"`
@@ -37,23 +39,22 @@ type BestSeller struct {
 	ReturnsDate    *string  `json:"returns-update-date"`
 }
 
-func (my *MyInvestor) GetBestSellers(ctx context.Context) ([]BestSeller, error) {
-	f, err := os.Open("best-sellers.json")
-	if err != nil {
-		return nil, fmt.Errorf("open: %w", err)
-	}
+//go:embed best-sellers.json
+var bestSellersJSON []byte
+
+func (*MyInvestor) GetBestSellers(context.Context) (_ []BestSeller, err error) {
 	var res []BestSeller
-	if err := json.NewDecoder(f).Decode(&res); err != nil {
+	if err := json.Unmarshal(bestSellersJSON, &res); err != nil {
 		return nil, fmt.Errorf("json decode: %w", err)
 	}
 	return res, nil
 }
 
-func (my *MyInvestor) RefreshBestSellers(ctx context.Context) ([]BestSeller, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (my *MyInvestor) RefreshBestSellers(ctx context.Context) (_ []BestSeller, err error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", my.url+"/BEST_SELLERS", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, my.url+"/BEST_SELLERS", http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
 	}
@@ -61,10 +62,13 @@ func (my *MyInvestor) RefreshBestSellers(ctx context.Context) ([]BestSeller, err
 	if err != nil {
 		return nil, fmt.Errorf("do: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() { err = errors.Join(err, res.Body.Close()) }()
 
 	if res.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, fmt.Errorf("wrong status: %d, read body: %w", res.StatusCode, err)
+		}
 		return nil, fmt.Errorf("wrong status: %d, body: %s", res.StatusCode, body)
 	}
 

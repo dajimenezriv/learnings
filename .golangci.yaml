@@ -4,11 +4,13 @@ linters:
   default: all
   disable:
     - depguard
+    - err113
     - exhaustruct
     - exhaustruct_v5
     - gomodguard
     - ireturn
     - lll
+    - mnd
     - nlreturn
     - noinlineerr
     - paralleltest
@@ -22,6 +24,8 @@ linters:
     errcheck:
       check-type-assertions: true
       check-blank: true
+    sloglint:
+      context: scope
     gocritic:
       enable-all: true
       disabled-checks:
@@ -47,7 +51,7 @@ linters:
           - funlen
           - gochecknoglobals
           - goconst
-          - mnd
+          - noctx
           - wrapcheck
 
 formatters:

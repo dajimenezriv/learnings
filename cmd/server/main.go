@@ -14,26 +14,15 @@ import (
 	"time"
 
 	"exercise/internal/platform/httpapi"
+	"exercise/internal/platform/logger"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-)
-
-const (
-	readHeaderTimeout = 5 * time.Second
-	readTimeout       = 10 * time.Second
-	writeTimeout      = 30 * time.Second
-	idleTimeout       = 120 * time.Second
-	shutdownTimeout   = 10 * time.Second
-)
-
-var (
-	errUnknownCommand = errors.New("unknown command")
-	errPoolerURL      = errors.New("DATABASE_URL must use the direct Neon endpoint, not -pooler")
 )
 
 type config struct {
@@ -57,7 +46,7 @@ func dispatch(args []string) error {
 	case "migrate":
 		return migrateUp()
 	default:
-		return fmt.Errorf("%w %q", errUnknownCommand, args[0])
+		return fmt.Errorf("unknown command %q", args[0])
 	}
 }
 
@@ -73,12 +62,14 @@ func loadConfig() (config, error) {
 	// lock, which breaks under PgBouncer transaction mode. Use the direct endpoint.
 	// https://neon.com/docs/connect/connection-pooling
 	if strings.Contains(cfg.DatabaseURL, "-pooler") {
-		return config{}, errPoolerURL
+		return config{}, errors.New("DATABASE_URL must use the direct Neon endpoint, not -pooler")
 	}
 	return cfg, nil
 }
 
 func run() error {
+	logger.Setup()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -103,10 +94,10 @@ func run() error {
 	srv := &http.Server{
 		Addr:              ":8080",
 		Handler:           registerHTTPHandlers(app),
-		ReadHeaderTimeout: readHeaderTimeout,
-		ReadTimeout:       readTimeout,
-		WriteTimeout:      writeTimeout,
-		IdleTimeout:       idleTimeout,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	serveErr := make(chan error, 1)
@@ -125,7 +116,7 @@ func run() error {
 		log.Println("🛑 Shutting down")
 	}
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("shutdown server: %w", err)
@@ -135,6 +126,27 @@ func run() error {
 
 func registerHTTPHandlers(app *application) chi.Router {
 	r := chi.NewRouter()
+	r.Use(
+		middleware.Heartbeat("/healthz"),
+		middleware.RequestID,
+		// Assumes the server is only reachable through the edge proxy, which
+		// overwrites X-Real-IP with the address of the connection it accepted.
+		middleware.ClientIPFromHeader("X-Real-IP"),
+		httpapi.TraceMiddleware,
+		httpapi.LoggerMiddleware,
+		httpapi.RecovererMiddleware,
+		// Load shedding, not rate limiting: caps in-flight requests across all
+		// clients and rejects the rest straight away. 503 instead of the default
+		// 429, since the server is overloaded, not the client misbehaving.
+		middleware.ThrottleWithOpts(middleware.ThrottleOpts{
+			Limit:        1000,
+			StatusCode:   http.StatusServiceUnavailable,
+			RetryAfterFn: func(bool) time.Duration { return time.Second },
+		}),
+		middleware.RequestSize(1<<20),
+		httpapi.TimeoutMiddleware(10*time.Second),
+	)
+
 	registerOperations(humachi.New(r, httpapi.Config()), app)
 	return r
 }

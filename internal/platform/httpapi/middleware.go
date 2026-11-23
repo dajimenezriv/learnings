@@ -1,7 +1,8 @@
-package chiapi
+package httpapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -10,7 +11,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dajimenezriv/personal/internal/logger"
+	"exercise/internal/platform/logger"
+
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
@@ -32,8 +34,8 @@ func NewMiddleware(l limiter) *Middleware {
 	return &Middleware{l: l}
 }
 
-func traceMiddleware(next http.Handler) http.Handler {
-	tracer := otel.Tracer("exercises/chiapi")
+func TraceMiddleware(next http.Handler) http.Handler {
+	tracer := otel.Tracer("learnings")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Continue the caller's trace if it sent a traceparent header or start a new one.
 		ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
@@ -50,7 +52,7 @@ func traceMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func loggerMiddleware(next http.Handler) http.Handler {
+func LoggerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -73,35 +75,34 @@ func loggerMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func recovererMiddleware(next http.Handler) http.Handler {
+func RecovererMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
+		defer func(ctx context.Context) {
 			rvr := recover()
 			if rvr == nil {
 				return
 			}
 
-			//nolint:errorlint // panic values are not wrapped
-			if rvr == http.ErrAbortHandler {
+			if err, ok := rvr.(error); ok && errors.Is(err, http.ErrAbortHandler) {
 				// We don't recover http.ErrAbortHandler so the response to the client is
 				// aborted, this should not be logged.
 				panic(rvr)
 			}
 
-			slog.ErrorContext(r.Context(), "panic recovered",
+			slog.ErrorContext(ctx, "panic recovered",
 				"panic", fmt.Sprint(rvr),
 				"stack", string(debug.Stack()))
 
 			if r.Header.Get("Connection") != "Upgrade" {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
-		}()
+		}(r.Context())
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-func timeoutMiddleware(d time.Duration) func(http.Handler) http.Handler {
+func TimeoutMiddleware(d time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx, cancel := context.WithTimeout(r.Context(), d)

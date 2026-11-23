@@ -1,12 +1,13 @@
 package myinvestor
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
 )
 
@@ -17,18 +18,18 @@ func TestMain(m *testing.M) {
 func TestGetBestSellers(t *testing.T) {
 	my := &MyInvestor{}
 	res, err := my.GetBestSellers(t.Context())
-	fmt.Println(res, err)
+	require.NoError(t, err)
+	assert.NotEmpty(t, res)
 }
 
 func TestRefreshBestSellers(t *testing.T) {
 	data, err := os.ReadFile("best-sellers.json")
-	if err != nil {
-		t.Fatalf("ReadFile() = %v, want nil", err)
-	}
+	require.NoError(t, err)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /BEST_SELLERS", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "%s", string(data))
+	mux.HandleFunc("GET /BEST_SELLERS", func(w http.ResponseWriter, _ *http.Request) {
+		_, werr := w.Write(data)
+		assert.NoError(t, werr)
 	})
 
 	srv := httptest.NewServer(mux)
@@ -38,5 +39,7 @@ func TestRefreshBestSellers(t *testing.T) {
 		url:    srv.URL,
 	}
 
-	my.RefreshBestSellers(t.Context())
+	res, err := my.RefreshBestSellers(t.Context())
+	require.NoError(t, err)
+	assert.NotEmpty(t, res)
 }

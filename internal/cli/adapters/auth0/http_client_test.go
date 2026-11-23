@@ -37,7 +37,7 @@ func storeWith(t *testing.T, tok *oauth2.Token) *authtest.FakeTokenStore {
 
 func callAPI(t *testing.T, client *http.Client) error {
 	t.Helper()
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example/actors", http.NoBody)
+	req, err := http.NewRequest(http.MethodGet, "https://api.example/actors", http.NoBody)
 	require.NoError(t, err)
 	resp, err := client.Do(req)
 	if err != nil {

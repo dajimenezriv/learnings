@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Usage: env-encrypt.sh DIR...
 set -euo pipefail
 
 for dir in "$@"; do
@@ -7,7 +6,7 @@ for dir in "$@"; do
     echo "skip $dir: no .env"
     continue
   fi
-  # sops re-randomizes IV/MAC on every encrypt, so only rewrite .env.enc when the plaintext changed
+  # sops re-randomizes IV/MAC on every encrypt, so only rewrite .env.enc when the plaintext changed.
   if [ -f "$dir/.env.enc" ] && sops decrypt --input-type dotenv --output-type dotenv "$dir/.env.enc" 2>/dev/null | cmp -s - "$dir/.env"; then
     echo "unchanged $dir"
     continue

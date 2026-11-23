@@ -1,9 +1,0 @@
-version: "3"
-
-tasks:
-  run:
-    cmd: go run ./cmd/server
-  lint:
-    cmd: golangci-lint run
-  fmt:
-    cmd: golangci-lint fmt
